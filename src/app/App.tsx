@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react'
+import React, {useCallback, useEffect} from 'react'
 import './App.css'
 import {
     AppBar,
@@ -15,30 +15,28 @@ import {TodolistsList} from '../features/TodolistsList/TodolistsList'
 import {ErrorSnackbar} from '../components/ErrorSnackbar/ErrorSnackbar'
 import {useDispatch, useSelector} from 'react-redux'
 import {AppRootStateType} from './store'
-import {initializeAppTC, InitialStateType, RequestStatusType} from './app-reducer'
-import {BrowserRouter, Redirect, Route, Switch} from 'react-router-dom';
-import {Login} from '../features/Login/Login';
-import {logoutTC} from '../features/Login/auth-reducer';
+import {initializeAppTC, RequestStatusType} from './app-reducer'
+import {BrowserRouter, Route} from 'react-router-dom'
+import {Login} from '../features/Login/Login'
+import {logoutTC} from '../features/Login/auth-reducer'
 
 type PropsType = {
     demo?: boolean
 }
 
-
 function App({demo = false}: PropsType) {
-
+    const status = useSelector<AppRootStateType, RequestStatusType>((state) => state.app.status)
+    const isInitialized = useSelector<AppRootStateType, boolean>((state) => state.app.isInitialized)
+    const isLoggedIn = useSelector<AppRootStateType, boolean>(state => state.auth.isLoggedIn)
     const dispatch = useDispatch()
 
     useEffect(() => {
         dispatch(initializeAppTC())
     }, [])
 
-    const isInitialized = useSelector<AppRootStateType, boolean>((state) => state.app.isInitialized)
-    const isLoggedIn = useSelector<AppRootStateType, boolean>(state => state.auth.isLoggedIn)
-    const status = useSelector<AppRootStateType, RequestStatusType>((state) => state.app.status)
-    const logoutHandler = () => {
+    const logoutHandler = useCallback(() => {
         dispatch(logoutTC())
-    }
+    }, [])
 
     if (!isInitialized) {
         return <div
@@ -47,8 +45,8 @@ function App({demo = false}: PropsType) {
         </div>
     }
 
-
-    return (<BrowserRouter>
+    return (
+        <BrowserRouter>
             <div className="App">
                 <ErrorSnackbar/>
                 <AppBar position="static">
@@ -60,18 +58,12 @@ function App({demo = false}: PropsType) {
                             News
                         </Typography>
                         {isLoggedIn && <Button color="inherit" onClick={logoutHandler}>Log out</Button>}
-
                     </Toolbar>
                     {status === 'loading' && <LinearProgress/>}
                 </AppBar>
                 <Container fixed>
-                    <Switch>
-                        <Route exact path={'/'} render={() => <TodolistsList demo={demo}/>}/>
-                        <Route path={'/login'} render={() => <Login/>}/>
-                        <Route path={'/404'} render={() => <h1>404: PAGE NOT FOUND</h1>}/>
-                        <Redirect from={'*'} to={'/404'}/>
-                    </Switch>
-
+                    <Route exact path={'/'} render={() => <TodolistsList demo={demo}/>}/>
+                    <Route path={'/login'} render={() => <Login/>}/>
                 </Container>
             </div>
         </BrowserRouter>
